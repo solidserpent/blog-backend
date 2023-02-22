@@ -18,7 +18,7 @@ server.use(
 );
 
 server.get("/", (req, res) => {
-  res.send("Welcome to my blog API");
+  res.send({ name: "Brian" });
 });
 
 server.post("/newPost", async (req, res) => {
