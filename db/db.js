@@ -20,6 +20,9 @@ if (process.env.RDS_HOSTNAME) {
   });
 }
 
+const User = UserModel(db);
+const Post = PostModel(db);
+
 const connectToDB = async () => {
   try {
     await db.authenticate();
