@@ -1,7 +1,6 @@
-//#4
-const { DataTypes } = require("sequelize");
+import { DataTypes } from "sequelize";
 
-module.exports = (db) => {
+const User = (db) => {
   return db.define("user", {
     id: {
       type: DataTypes.INTEGER,
@@ -10,6 +9,7 @@ module.exports = (db) => {
     },
     email: DataTypes.STRING,
     password: DataTypes.STRING,
-    passwordResetToken: DataTypes.STRING,
   });
 };
+
+export default User;

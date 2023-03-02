@@ -1,7 +1,13 @@
 //#1 - express setup (cors, body-parser, bcrypt, sessions)
-const express = require("express");
+import express from "express";
+import cors from "cors";
+import { db, Post, User } from "./db/db.js";
+import bcrypt from "bcrypt";
+import sessions from "express-session";
+import connectSession from "connect-session-sequelize";
+import bodyParser from "body-parser";
+
 const server = express();
-const cors = require("cors");
 server.use(
   cors({
     credentials: true,
@@ -12,17 +18,13 @@ server.use(
     ],
   })
 );
-const bodyParser = require("body-parser");
 server.use(bodyParser.json());
-const bcrypt = require("bcrypt");
 
-const apiKey = require("./sendgridAPIkey");
-const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(apiKey);
+// const apiKey = require("./sendgridAPIkey");
+// const sgMail = require("@sendgrid/mail");
+// sgMail.setApiKey(apiKey);
 
-const sessions = require("express-session");
-const { db, User, Post } = require("./db/db.js"); //#2, #8 DB setup
-const sequelizeStore = require("connect-session-sequelize")(sessions.Store);
+const sequelizeStore = connectSession(sessions.Store);
 const oneMonth = 1000 * 60 * 60 * 24 * 30;
 server.use(
   sessions({
@@ -57,83 +59,83 @@ server.post("/login", async (req, res) => {
   }
 });
 
-server.post("/forgotPassword", async (req, res) => {
-  const user = await User.findOne({ where: { email: req.body.email } });
-  if (user) {
-    const { nanoid } = await import("nanoid");
+// server.post("/forgotPassword", async (req, res) => {
+//   const user = await User.findOne({ where: { email: req.body.email } });
+//   if (user) {
+//     const { nanoid } = await import("nanoid");
 
-    user.passwordResetToken = nanoid();
-    await user.save();
+//     user.passwordResetToken = nanoid();
+//     await user.save();
 
-    const url = process.env.DATABASE_URL
-      ? "https://myherokuappCHANGETHIS.heroku.com" //blog-frontend URL
-      : "http://localhost:3000";
+//     const url = process.env.DATABASE_URL
+//       ? "https://myherokuappCHANGETHIS.heroku.com" //blog-frontend URL
+//       : "http://localhost:3000";
 
-    const msg = {
-      to: user.email,
-      from: "maxm@hackupstate.com", // Use the email address or domain you verified above
-      subject: "You Needed a Reset, Huh?",
-      html: `Click <a href="${url}/setPassword?token=${user.passwordResetToken}">here</a> to reset your password.`,
-    };
+//     const msg = {
+//       to: user.email,
+//       from: "maxm@hackupstate.com", // Use the email address or domain you verified above
+//       subject: "You Needed a Reset, Huh?",
+//       html: `Click <a href="${url}/setPassword?token=${user.passwordResetToken}">here</a> to reset your password.`,
+//     };
 
-    try {
-      await sgMail.send(msg);
-    } catch (error) {
-      console.error(error);
+//     try {
+//       await sgMail.send(msg);
+//     } catch (error) {
+//       console.error(error);
 
-      if (error.response) {
-        console.error(error.response.body);
-      }
-    }
+//       if (error.response) {
+//         console.error(error.response.body);
+//       }
+//     }
 
-    res.send({
-      message: "Password is ready to be reset. Go check your email",
-    });
-  } else {
-    res.send({ error: "You don't have an account to reset a password on" });
-  }
-});
+//     res.send({
+//       message: "Password is ready to be reset. Go check your email",
+//     });
+//   } else {
+//     res.send({ error: "You don't have an account to reset a password on" });
+//   }
+// });
 
-server.post("/setPassword", async (req, res) => {
-  const user = await User.findOne({
-    where: { passwordResetToken: req.body.token },
-  });
-  if (user) {
-    // set the password
-    user.password = bcrypt.hashSync(req.body.password, 10);
-    user.passwordResetToken = null;
-    await user.save();
-    req.session.user = user;
-    res.send({ success: true });
-  } else {
-    res.send({ error: "You don't have an account to reset a password on" });
-  }
-});
+// server.post("/setPassword", async (req, res) => {
+//   const user = await User.findOne({
+//     where: { passwordResetToken: req.body.token },
+//   });
+//   if (user) {
+//     // set the password
+//     user.password = bcrypt.hashSync(req.body.password, 10);
+//     user.passwordResetToken = null;
+//     await user.save();
+//     req.session.user = user;
+//     res.send({ success: true });
+//   } else {
+//     res.send({ error: "You don't have an account to reset a password on" });
+//   }
+// });
 
-server.post("/createAccount", async (req, res) => {
-  const userWithThisEmail = await User.findOne({
-    where: { email: req.body.email },
-  });
-  if (userWithThisEmail) {
-    res.send({
-      error: "Email is already taken. Go fish!",
-    });
-  } else {
-    User.create({
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-    });
-    res.send({ success: true });
-  }
-});
+// server.post("/createAccount", async (req, res) => {
+//   const userWithThisEmail = await User.findOne({
+//     where: { email: req.body.email },
+//   });
+//   if (userWithThisEmail) {
+//     res.send({
+//       error: "Email is already taken. Go fish!",
+//     });
+//   } else {
+//     User.create({
+//       email: req.body.email,
+//       password: bcrypt.hashSync(req.body.password, 10),
+//     });
+//     res.send({ success: true });
+//   }
+// });
 
-server.get("/loginStatus", (req, res) => {
-  if (req.session.user) {
-    res.send({ isLoggedIn: true });
-  } else {
-    res.send({ isLoggedIn: false });
-  }
-});
+// server.get("/loginStatus", (req, res) => {
+//   if (req.session.user) {
+//     res.send({ isLoggedIn: true });
+//   } else {
+//     res.send({ isLoggedIn: false });
+//   }
+// });
 
 server.get("/logout", (req, res) => {
   req.session.destroy();
@@ -179,24 +181,39 @@ server.get("/posts", async (req, res) => {
   });
 });
 
-server.get("/post/:id", async (req, res) => {
-  res.send({ post: await Post.findByPk(req.params.id) });
-});
+// server.get("/post/:id", async (req, res) => {
+//   res.send({ post: await Post.findByPk(req.params.id) });
+// });
 
-server.get("/authors", async (req, res) => {
-  res.send({
-    authors: await User.findAll({ attributes: ["id", "email"] }),
-  });
-});
+// server.get("/authors", async (req, res) => {
+//   res.send({
+//     authors: await User.findAll({ attributes: ["id", "email"] }),
+//   });
+// });
 
-server.get("/author/:id", async (req, res) => {
-  res.send({
-    posts: await Post.findAll({ where: { authorID: req.params.id } }),
-    user: await User.findByPk(req.params.id, {
-      attributes: ["email"],
-    }),
-  });
-});
+// server.get("/author/:id", async (req, res) => {
+//   res.send({
+//     posts: await Post.findAll({ where: { authorID: req.params.id } }),
+//     user: await User.findByPk(req.params.id, {
+//       attributes: ["email"],
+//     }),
+//   });
+// });
+
+// const serverStarted = async () => {
+//   const user = await User.findOne({ where: { email: "brian@brian.tech" } });
+//   if (!user) {
+//     await User.create({
+//       email: "brian@brian.tech",
+//       first_name: "Brian",
+//       user_level: "Administrator",
+//       username: "FirstGuy",
+//       password: bcrypt.hashSync("qwerty", 10),
+//     });
+//     console.log(user);
+//   }
+// };
+// serverStarted();
 
 let port = 3001;
 if (process.env.PORT) {
