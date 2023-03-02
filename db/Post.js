@@ -1,6 +1,6 @@
-import { DataTypes } from "sequelize";
+const { DataTypes } = require("sequelize");
 
-const Post = (db) => {
+module.exports = (db) => {
   return db.define("post", {
     id: {
       type: DataTypes.INTEGER,
@@ -8,10 +8,7 @@ const Post = (db) => {
       autoIncrement: true,
     },
     title: DataTypes.STRING,
-    tagline: DataTypes.STRING,
     content: DataTypes.TEXT,
-    userID: DataTypes.INTEGER,
+    authorID: DataTypes.INTEGER,
   });
 };
-
-export default Post;

@@ -1,6 +1,5 @@
-import Sequelize from "sequelize";
-import PostModel from "./Post.js";
-import UserModel from "./User.js";
+//#3 setup DB models
+const Sequelize = require("sequelize");
 
 let db;
 if (process.env.RDS_HOSTNAME) {
@@ -15,28 +14,56 @@ if (process.env.RDS_HOSTNAME) {
 } else {
   console.log("Connecting to local database");
   // if we're running locally, use the localhost connection
-  db = new Sequelize("postgres://bkh@localhost:5432/blog", {
+  db = new Sequelize("postgres://hackupstate@localhost:5432/blog", {
     logging: false,
   });
 }
 
-const User = UserModel(db);
-const Post = PostModel(db);
+const User = require("./User")(db);
+const Post = require("./Post")(db);
 
+//#5 connect and sync to DB
 const connectToDB = async () => {
   try {
     await db.authenticate();
-    console.log("Connected to DB successfully");
-
-    db.sync({ force: false });
+    console.log("Connected successfully");
+    await db.sync(); //#6 sync by creating the tables based off our models if they don't exist already
   } catch (error) {
     console.error(error);
-    console.error("PANIC! DB PROBLEM!");
+    console.error("PANIC! DB PROBLEMS!");
   }
 
-  Post.belongsTo(User, { foreignKey: "userID" });
+  Post.belongsTo(User, { foreignKey: "authorID" });
 };
 
-connectToDB();
+//#10 seeding the database
+const createFirstUser = async () => {
+  const users = await User.findAll({});
+  if (users.length === 0) {
+    User.create({
+      email: "max",
+      password: bcrypt.hashSync("supersecret", 10),
+    });
+  }
+};
 
-export { db, Post, User };
+const createSecondUser = async () => {
+  const secondUser = await User.findOne({
+    where: { email: "testymctesterson" },
+  });
+  if (!secondUser) {
+    User.create({
+      email: "testymctesterson",
+      password: bcrypt.hashSync("secret", 10),
+    });
+  }
+};
+
+// 1. connect and standup our tables
+connectToDB().then(() => {
+  // 2. and then create models
+  createFirstUser();
+  createSecondUser();
+});
+
+module.exports = { db, User, Post }; //#7 export out the DB & Model so we can use it else where in our code
